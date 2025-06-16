@@ -1,5 +1,14 @@
 <?php
-include "includes/conexion.php";
+include "../includes/conexion.php";
+
+// Consulta para obtener los departamentos
+$sql = "SELECT * FROM departamentos ORDER BY id_departamento ASC";
+$result = $conn->query($sql);
+
+// Validación de la consulta
+if (!$result) {
+    die("Error en la consulta: " . $conn->error);
+}
 ?>
 
 <!DOCTYPE html>
@@ -7,138 +16,87 @@ include "includes/conexion.php";
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CharlOs Streetwear</title>
-    <link rel="stylesheet" href="styles/bootstrap.min.css">
-    <link rel="stylesheet" href="styles/all.min.css">
-    <link rel="stylesheet" href="styles/styles.css">
-    <style>
-        /* Fondo con imagen */
-        body {
-            background-image: url('imagenes/fondo-index.jpg'); 
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-
-        /* Contenedor principal con fondo semi-transparente */
-        .content-container {
-            background-color: rgba(255, 255, 255, 0.85); /* Mayor opacidad */
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 1100px; /* Limitar ancho */
-            margin: auto; /* Centrar */
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Tarjetas con mejor espaciado */
-        .card {
-            border-radius: 10px;
-            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s ease-in-out;
-        }
-        .card:hover {
-            transform: scale(1.03);
-        }
-        .card-header {
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
-        }
-
-    </style>
+    <title>Gestión de Departamentos</title>
+    <link rel="stylesheet" href="../styles/bootstrap.min.css">
+    <link rel="stylesheet" href="../styles/all.min.css">
+    <link rel="stylesheet" href="../styles/styles.css">
 </head>
 <body>
     <header>
         <h1>
-            <a href="../gestion-empleados/index.php" class="header-link">CharlOs Streetwear</a>
+            <a href="../index.php" class="header-link">CharlOs Streetwear</a>
         </h1>
     </header>
 
     <div class="container mt-4 content-container">
-        <div class="row text-center justify-content-center">
-            <!-- EMPLEADOS -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card shadow">
-                    <div class="card-header text-white" style="background-color: #0066FF;">
-                        <h5><i class="fas fa-user-tie"></i> Empleados</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Gestión de empleados de la empresa.</p>
-                        <a href="empleados/index.php" class="btn text-white" style="background-color: #0066FF;">Ver Empleados</a>
-                    </div>
-                </div>
-            </div>
+        <h2 class="text-center mb-4">Listado de Departamentos</h2>
 
-            <!-- DEPARTAMENTOS -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card shadow">
-                    <div class="card-header text-white" style="background-color: #007A33;">
-                        <h5><i class="fas fa-building"></i> Departamentos</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Áreas dentro de la empresa.</p>
-                        <a href="departamentos/index.php" class="btn text-white" style="background-color: #007A33;">Ver Departamentos</a>
-                    </div>
-                </div>
+        <!-- Mensajes dinámicos -->
+        <?php if (isset($_GET['success'])): ?>
+            <div class="alert alert-success">
+                <?php if ($_GET['success'] == 1): ?>
+                    Departamento agregado correctamente.
+                <?php elseif ($_GET['success'] == 2): ?>
+                    Departamento actualizado correctamente.
+                <?php elseif ($_GET['success'] == 3): ?>
+                    Departamento eliminado correctamente.
+                <?php endif; ?>
             </div>
+        <?php endif; ?>
 
-            <!-- PUESTOS -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card shadow">
-                    <div class="card-header text-white" style="background-color: #FFC107;">
-                        <h5><i class="fas fa-briefcase"></i> Puestos</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Cargos dentro de cada departamento.</p>
-                        <a href="puestos/index.php" class="btn text-white" style="background-color: #FFC107;">Ver Puestos</a>
-                    </div>
-                </div>
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-danger">
+                <?php if ($_GET['error'] == 'relation'): ?>
+                    No se puede eliminar, hay empleados en este departamento.
+                <?php elseif ($_GET['error'] == 'notfound'): ?>
+                    Departamento no encontrado.
+                <?php elseif ($_GET['error'] == 'delete'): ?>
+                    Error al intentar eliminar el departamento.
+                <?php endif; ?>
             </div>
+        <?php endif; ?>
 
-            <!-- HORARIOS -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card shadow">
-                    <div class="card-header text-white" style="background-color: #00BFFF;">
-                        <h5><i class="fas fa-clock"></i> Horarios</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Turnos de los empleados.</p>
-                        <a href="horarios/index.php" class="btn text-white" style="background-color: #00BFFF;">Ver Horarios</a>
-                    </div>
-                </div>
-            </div>
 
-            <!-- ASISTENCIAS -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card shadow">
-                    <div class="card-header text-white" style="background-color: #DC3545;">
-                        <h5><i class="fas fa-calendar-check"></i> Asistencias</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Registro de asistencia de empleados.</p>
-                        <a href="asistencias/index.php" class="btn text-white" style="background-color: #DC3545;">Ver Asistencias</a>
-                    </div>
-                </div>
-            </div>
+        <!-- Botón para agregar -->
+        <a href="crear.php" class="btn btn-primary mb-3">
+            <i class="fa-solid fa-circle-plus"></i> Agregar Departamento
+        </a>
 
-            <!-- FINANZAS -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card shadow">
-                    <div class="card-header text-white" style="background-color: #6C757D;">
-                        <h5><i class="fas fa-money-bill-wave"></i> Finanzas</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Pagos y Nominas de empleados.</p>
-                        <a href="finanzas/indexPN.php" class="btn text-white" style="background-color: #6C757D;">Ver Finanzas</a>
-                    </div>
-                </div>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($row["id_departamento"]); ?></td>
+                        <td><?php echo htmlspecialchars($row["nombre_departamento"]); ?></td>
+                        <td>
+                            <a href="editar.php?id=<?php echo $row["id_departamento"]; ?>" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <a href="eliminar.php?id=<?php echo $row["id_departamento"]; ?>" 
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('¿Estás seguro de eliminar este departamento?');">
+                                <i class="fas fa-trash-alt"></i> Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 
     <footer>
-        <p>&copy; 2024 Gestión de Empleados - Todos los derechos reservados.</p>
+        <p>&copy; 2024 Gestión de Departamentos - Todos los derechos reservados.</p>
     </footer>
 
-    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="../scripts/dinamico.js"></script>
 </body>
 </html>
