@@ -1,76 +1,63 @@
 <?php
 include "../includes/conexion.php";
 
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    header("Location: index.php?error=notfound");
+    exit;
+}
+
+$id = $_GET['id'];
 $error_message = "";
 
-// Validar ID recibido
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header("Location: index.php?error=notfound");
-    exit;
-}
-
-$id_puesto = intval($_GET['id']);
-
-// Obtener datos actuales del puesto
-$sql = "SELECT * FROM puestos WHERE id_puesto = ?";
+// Obtener los datos del empleado
+$sql = "SELECT * FROM empleados WHERE id_empleado = ?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $id_puesto);
+$stmt->bind_param("i", $id);
 $stmt->execute();
-$result = $stmt->get_result();
-$puesto = $result->fetch_assoc();
+$resultado = $stmt->get_result();
+$empleado = $resultado->fetch_assoc();
 $stmt->close();
 
-if (!$puesto) {
+if (!$empleado) {
     header("Location: index.php?error=notfound");
     exit;
 }
 
-// Obtener departamentos
-$sql_deptos = "SELECT id_departamento, nombre_departamento FROM departamentos ORDER BY nombre_departamento ASC";
-$departamentos = $conn->query($sql_deptos);
-
-// Procesar actualización
+// Procesar el formulario
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nuevo_nombre = trim($_POST["nombre_puesto"]);
-    $nuevo_departamento = intval($_POST["id_departamento"]);
+    $nombre = trim($_POST['nombre_empleado']);
+    $ap_paterno = trim($_POST['apellido_paterno']);
+    $ap_materno = trim($_POST['apellido_materno']);
+    $telefono = trim($_POST['telefono']);
+    $email = trim($_POST['email']);
+    $direccion = trim($_POST['direccion']);
+    $estado = $_POST['estado'];
+    $id_departamento = $_POST['id_departamento'];
+    $id_puesto = $_POST['id_puesto'];
 
-    if (empty($nuevo_nombre)) {
-        $error_message = "El nombre del puesto no puede estar vacío.";
+    $sql_update = "UPDATE empleados SET id_departamento=?, id_puesto=?, nombre_empleado=?, apellido_paterno=?, apellido_materno=?, telefono=?, email=?, direccion=?, estado=? WHERE id_empleado=?";
+    $stmt_update = $conn->prepare($sql_update);
+    $stmt_update->bind_param("iisssssssi", $id_departamento, $id_puesto, $nombre, $ap_paterno, $ap_materno, $telefono, $email, $direccion, $estado, $id);
+
+    if ($stmt_update->execute()) {
+        $stmt_update->close();
+        header("Location: index.php?success=2");
+        exit;
     } else {
-        // Verificar que no haya otro puesto con el mismo nombre (excepto el actual)
-        $sql_verificar = "SELECT COUNT(*) AS total FROM puestos WHERE nombre_puesto = ? AND id_puesto != ?";
-        $stmt = $conn->prepare($sql_verificar);
-        $stmt->bind_param("si", $nuevo_nombre, $id_puesto);
-        $stmt->execute();
-        $existe = $stmt->get_result()->fetch_assoc()['total'];
-        $stmt->close();
-
-        if ($existe > 0) {
-            $error_message = "Ya existe un puesto con ese nombre.";
-        } else {
-            $sql_update = "UPDATE puestos SET nombre_puesto = ?, id_departamento = ? WHERE id_puesto = ?";
-            $stmt = $conn->prepare($sql_update);
-            $stmt->bind_param("sii", $nuevo_nombre, $nuevo_departamento, $id_puesto);
-
-            if ($stmt->execute()) {
-                $stmt->close();
-                header("Location: index.php?success=2");
-                exit;
-            } else {
-                $error_message = "Error al actualizar el puesto.";
-            }
-
-            $stmt->close();
-        }
+        $error_message = "Error al actualizar el empleado.";
     }
 }
+
+// Obtener datos para selects
+$departamentos = $conn->query("SELECT id_departamento, nombre_departamento FROM departamentos ORDER BY nombre_departamento ASC");
+$puestos = $conn->query("SELECT id_puesto, nombre_puesto FROM puestos ORDER BY nombre_puesto ASC");
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Editar Puesto</title>
+    <title>Editar Empleado</title>
     <link rel="stylesheet" href="../styles/bootstrap.min.css">
     <link rel="stylesheet" href="../styles/all.min.css">
     <link rel="stylesheet" href="../styles/styles.css">
@@ -81,29 +68,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </header>
 
     <div class="container mt-4 content-container">
-        <h2 class="text-center mb-4">Editar Puesto</h2>
+        <h2 class="text-center mb-4">Editar Empleado</h2>
 
         <?php if ($error_message): ?>
             <div class="alert alert-danger"><?php echo $error_message; ?></div>
         <?php endif; ?>
 
-        <form method="POST" class="needs-validation" novalidate>
+        <form action="editar.php?id=<?php echo $id; ?>" method="POST">
             <div class="mb-3">
-                <label for="id_puesto" class="form-label">ID del Puesto:</label>
-                <input type="text" id="id_puesto" class="form-control" value="<?php echo $puesto['id_puesto']; ?>" disabled>
+                <label class="form-label">Nombre:</label>
+                <input type="text" name="nombre_empleado" class="form-control" value="<?php echo htmlspecialchars($empleado['nombre_empleado']); ?>" required>
             </div>
-
             <div class="mb-3">
-                <label for="nombre_puesto" class="form-label">Nombre del Puesto:</label>
-                <input type="text" name="nombre_puesto" id="nombre_puesto" class="form-control" required value="<?php echo htmlspecialchars($puesto['nombre_puesto']); ?>">
+                <label class="form-label">Apellido Paterno:</label>
+                <input type="text" name="apellido_paterno" class="form-control" value="<?php echo htmlspecialchars($empleado['apellido_paterno']); ?>" required>
             </div>
-
             <div class="mb-3">
-                <label for="id_departamento" class="form-label">Departamento:</label>
-                <select name="id_departamento" id="id_departamento" class="form-select" required>
-                    <?php while ($row = $departamentos->fetch_assoc()): ?>
-                        <option value="<?php echo $row['id_departamento']; ?>" <?php if ($row['id_departamento'] == $puesto['id_departamento']) echo 'selected'; ?>>
-                            <?php echo htmlspecialchars($row['nombre_departamento']); ?>
+                <label class="form-label">Apellido Materno:</label>
+                <input type="text" name="apellido_materno" class="form-control" value="<?php echo htmlspecialchars($empleado['apellido_materno']); ?>" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Teléfono:</label>
+                <input type="text" name="telefono" class="form-control" value="<?php echo htmlspecialchars($empleado['telefono']); ?>" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Correo:</label>
+                <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($empleado['email']); ?>" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Dirección:</label>
+                <textarea name="direccion" class="form-control" required><?php echo htmlspecialchars($empleado['direccion']); ?></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Estado:</label>
+                <select name="estado" class="form-control" required>
+                    <option value="Activo" <?php if ($empleado['estado'] == 'Activo') echo 'selected'; ?>>Activo</option>
+                    <option value="Inactivo" <?php if ($empleado['estado'] == 'Inactivo') echo 'selected'; ?>>Inactivo</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Departamento:</label>
+                <select name="id_departamento" class="form-control" required>
+                    <?php while ($d = $departamentos->fetch_assoc()): ?>
+                        <option value="<?php echo $d['id_departamento']; ?>" <?php if ($empleado['id_departamento'] == $d['id_departamento']) echo 'selected'; ?>>
+                            <?php echo $d['nombre_departamento']; ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Puesto:</label>
+                <select name="id_puesto" class="form-control" required>
+                    <?php while ($p = $puestos->fetch_assoc()): ?>
+                        <option value="<?php echo $p['id_puesto']; ?>" <?php if ($empleado['id_puesto'] == $p['id_puesto']) echo 'selected'; ?>>
+                            <?php echo $p['nombre_puesto']; ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
@@ -113,7 +131,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <a href="index.php" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>
-
-    <script src="../scripts/validaciones.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
 </body>
 </html>

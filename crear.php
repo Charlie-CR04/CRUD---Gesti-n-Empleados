@@ -2,55 +2,54 @@
 include "../includes/conexion.php";
 
 $error_message = "";
-$success_message = "";
-
-// Obtener los departamentos para el select
-$sql_deptos = "SELECT id_departamento, nombre_departamento FROM departamentos ORDER BY nombre_departamento ASC";
-$result_deptos = $conn->query($sql_deptos);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $id_puesto = intval($_POST['id_puesto']);
-    $nombre = trim($_POST['nombre_puesto']);
-    $id_departamento = intval($_POST['id_departamento']);
+    $id_empleado = trim($_POST['id_empleado']);
+    $nombre = trim($_POST['nombre_empleado']);
+    $ap_paterno = trim($_POST['apellido_paterno']);
+    $ap_materno = trim($_POST['apellido_materno']);
+    $telefono = trim($_POST['telefono']);
+    $email = trim($_POST['email']);
+    $direccion = trim($_POST['direccion']);
+    $estado = $_POST['estado'];
+    $id_departamento = $_POST['id_departamento'];
+    $id_puesto = $_POST['id_puesto'];
 
-    if (empty($nombre)) {
-        $error_message = "El nombre del puesto no puede estar vacío.";
+    // Verificar si ya existe el ID del empleado
+    $verificar = $conn->prepare("SELECT COUNT(*) AS total FROM empleados WHERE id_empleado = ?");
+    $verificar->bind_param("i", $id_empleado);
+    $verificar->execute();
+    $existe = $verificar->get_result()->fetch_assoc()["total"];
+    $verificar->close();
+
+    if ($existe > 0) {
+        $error_message = "El ID del empleado ya existe.";
     } else {
-        // Verificar si ya existe ese ID o nombre
-        $sql_verificar = "SELECT COUNT(*) AS total FROM puestos WHERE id_puesto = ? OR nombre_puesto = ?";
-        $stmt = $conn->prepare($sql_verificar);
-        $stmt->bind_param("is", $id_puesto, $nombre);
-        $stmt->execute();
-        $resultado = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if ($resultado['total'] > 0) {
-            $error_message = "Ya existe un puesto con ese ID o nombre.";
-        } else {
-            // Insertar
-            $sql_insert = "INSERT INTO puestos (id_puesto, id_departamento, nombre_puesto) VALUES (?, ?, ?)";
-            $stmt = $conn->prepare($sql_insert);
-            $stmt->bind_param("iis", $id_puesto, $id_departamento, $nombre);
-
-            if ($stmt->execute()) {
-                $stmt->close();
-                header("Location: index.php?success=1");
-                exit;
-            } else {
-                $error_message = "Error al agregar el puesto.";
-            }
-
+        $sql = "INSERT INTO empleados (id_empleado, id_departamento, id_puesto, nombre_empleado, apellido_paterno, apellido_materno, telefono, email, direccion, estado)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("iiisssssss", $id_empleado, $id_departamento, $id_puesto, $nombre, $ap_paterno, $ap_materno, $telefono, $email, $direccion, $estado);
+        
+        if ($stmt->execute()) {
             $stmt->close();
+            header("Location: index.php?success=1");
+            exit;
+        } else {
+            $error_message = "Error al registrar el empleado.";
         }
     }
 }
+
+// Obtener departamentos y puestos para los selects
+$departamentos = $conn->query("SELECT id_departamento, nombre_departamento FROM departamentos ORDER BY nombre_departamento ASC");
+$puestos = $conn->query("SELECT id_puesto, nombre_puesto FROM puestos ORDER BY nombre_puesto ASC");
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Agregar Puesto</title>
+    <title>Agregar Empleado</title>
     <link rel="stylesheet" href="../styles/bootstrap.min.css">
     <link rel="stylesheet" href="../styles/all.min.css">
     <link rel="stylesheet" href="../styles/styles.css">
@@ -61,31 +60,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </header>
 
     <div class="container mt-4 content-container">
-        <h2 class="text-center mb-4">Registrar Puesto</h2>
+        <h2 class="text-center mb-4">Registrar Empleado</h2>
 
         <?php if ($error_message): ?>
             <div class="alert alert-danger"><?php echo $error_message; ?></div>
         <?php endif; ?>
 
-        <form action="crear.php" method="POST" class="needs-validation" novalidate>
+        <form action="crear.php" method="POST">
             <div class="mb-3">
-                <label for="id_puesto" class="form-label">ID del Puesto:</label>
-                <input type="number" id="id_puesto" name="id_puesto" class="form-control" required>
+                <label for="id_empleado" class="form-label">ID del Empleado:</label>
+                <input type="number" class="form-control" name="id_empleado" required>
             </div>
-
             <div class="mb-3">
-                <label for="nombre_puesto" class="form-label">Nombre del Puesto:</label>
-                <input type="text" id="nombre_puesto" name="nombre_puesto" class="form-control" required>
+                <label for="nombre_empleado" class="form-label">Nombre:</label>
+                <input type="text" class="form-control" name="nombre_empleado" required>
             </div>
-
+            <div class="mb-3">
+                <label for="apellido_paterno" class="form-label">Apellido Paterno:</label>
+                <input type="text" class="form-control" name="apellido_paterno" required>
+            </div>
+            <div class="mb-3">
+                <label for="apellido_materno" class="form-label">Apellido Materno:</label>
+                <input type="text" class="form-control" name="apellido_materno" required>
+            </div>
+            <div class="mb-3">
+                <label for="telefono" class="form-label">Teléfono:</label>
+                <input type="text" class="form-control" name="telefono" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Correo Electrónico:</label>
+                <input type="email" class="form-control" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="direccion" class="form-label">Dirección:</label>
+                <textarea class="form-control" name="direccion" rows="2" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="estado" class="form-label">Estado:</label>
+                <select class="form-control" name="estado" required>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                </select>
+            </div>
             <div class="mb-3">
                 <label for="id_departamento" class="form-label">Departamento:</label>
-                <select name="id_departamento" id="id_departamento" class="form-select" required>
-                    <option value="">Seleccione un departamento</option>
-                    <?php while ($row = $result_deptos->fetch_assoc()): ?>
-                        <option value="<?php echo $row['id_departamento']; ?>">
-                            <?php echo htmlspecialchars($row['nombre_departamento']); ?>
-                        </option>
+                <select class="form-control" name="id_departamento" required>
+                    <?php while ($d = $departamentos->fetch_assoc()): ?>
+                        <option value="<?php echo $d['id_departamento']; ?>"><?php echo $d['nombre_departamento']; ?></option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="id_puesto" class="form-label">Puesto:</label>
+                <select class="form-control" name="id_puesto" required>
+                    <?php while ($p = $puestos->fetch_assoc()): ?>
+                        <option value="<?php echo $p['id_puesto']; ?>"><?php echo $p['nombre_puesto']; ?></option>
                     <?php endwhile; ?>
                 </select>
             </div>
@@ -94,7 +123,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <a href="index.php" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>
-
-    <script src="../scripts/validaciones.js"></script>
 </body>
 </html>
