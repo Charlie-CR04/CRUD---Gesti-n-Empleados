@@ -1,42 +1,38 @@
 <?php
-include "../includes/conexion.php";
+include "../../includes/conexion.php";
 
-$error_message = "";
-
-// Verificar si se recibió el ID del horario
-if (isset($_GET['id']) && !empty($_GET['id'])) {
-    $id_horario = $_GET['id'];
-
-    // Verificar si el horario existe
-    $sql_verificar = "SELECT * FROM horarios WHERE id_horario = ?";
-    $stmt_verificar = $conn->prepare($sql_verificar);
-    $stmt_verificar->bind_param("i", $id_horario);
-    $stmt_verificar->execute();
-    $resultado = $stmt_verificar->get_result();
-    $horario = $resultado->fetch_assoc();
-    $stmt_verificar->close();
-
-    if ($horario) {
-        // Eliminar el horario
-        $sql = "DELETE FROM horarios WHERE id_horario = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $id_horario);
-
-        if ($stmt->execute()) {
-            $stmt->close();
-            header("Location: index.php?success=3"); // Redirigir con mensaje de éxito
-            exit;
-        } else {
-            $error_message = "Error al eliminar el horario.";
-        }
-
-        $stmt->close();
-    } else {
-        header("Location: index.php?error=notfound");
-        exit;
-    }
-} else {
+if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: index.php?error=notfound");
+    exit;
+}
+
+$id = $_GET['id'];
+
+// Verificar si hay pagos vinculados a esta nómina
+$sql_check = "SELECT COUNT(*) AS total FROM pagos WHERE id_nomina = ?";
+$stmt_check = $conn->prepare($sql_check);
+$stmt_check->bind_param("i", $id);
+$stmt_check->execute();
+$result = $stmt_check->get_result()->fetch_assoc();
+$stmt_check->close();
+
+if ($result['total'] > 0) {
+    header("Location: index.php?error=relation");
+    exit;
+}
+
+// Si no hay pagos, eliminar la nómina
+$sql_delete = "DELETE FROM nomina WHERE id_nomina = ?";
+$stmt = $conn->prepare($sql_delete);
+$stmt->bind_param("i", $id);
+
+if ($stmt->execute()) {
+    $stmt->close();
+    header("Location: index.php?success=3");
+    exit;
+} else {
+    $stmt->close();
+    header("Location: index.php?error=deletefail");
     exit;
 }
 ?>
