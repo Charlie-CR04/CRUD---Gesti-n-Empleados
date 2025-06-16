@@ -1,0 +1,129 @@
+:root {
+  --color-fondo: #f4f4f4;
+  --color-texto: #333;
+  --color-header: rgba(51, 51, 51, 0.8);
+  --color-nav: rgba(51, 51, 51, 0.8);
+  --color-texto-button: #333;
+  --color-enlace-hover: #555;
+  --color-footer: rgba(51, 51, 51, 0.8);
+
+  --fuente-principal: Arial, sans-serif;
+  --padding-general: 20px;
+  --borde-enlace: 5px;
+}
+
+/* Estilos generales */
+body {
+  background-image: url('/gestion-empleados/imagenes/fondo-index.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+/* Contenedor principal */
+.content-container {
+  background-color: rgba(255, 255, 255, 0.5); /* Fondo más transparente */
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 30px;
+}
+
+.table-container {
+  background-color: white; /* Fondo sólido para la tabla */
+  padding: 20px;
+  border-radius: 10px;
+}
+
+/* Encabezado */
+header {
+  background-color: var(--color-header);
+  color: white;
+  padding: 10px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+/* Estilo específico del enlace en el header */
+header h1 a {
+  text-decoration: none !important; /* Elimina el subrayado */
+  color: white !important; /* Color blanco */
+  font-weight: bold; /* Opcional: para dar énfasis */
+}
+
+header h1 a:hover {
+  color: #ddd !important; /* Cambia el color al pasar el cursor */
+}
+
+
+.navbar {
+  background-color: #f8f9fa;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+.navbar-nav .nav-link {
+  font-weight: bold;
+  color: #000;
+}
+
+.navbar-nav .dropdown-menu {
+  background-color: #f1f1f1;
+}
+
+
+/* Navegación */
+nav {
+  background-color: var(--color-nav); /* Fondo semitransparente */
+  padding: 10px 0;
+  border-bottom: 0 2px 4px rgba(0, 0, 0, 0.1); /* Borde inferior sutil para separación */
+}
+
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+nav ul li {
+  display: inline;
+  margin: 0 1px;
+}
+
+nav ul li a {
+  color: var(--color-texto-button);
+  text-decoration: none;
+  padding: 8px 15px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: var(--borde-enlace);
+  transition: background-color 0.3s;
+}
+
+nav ul li a:hover {
+  background-color: var(--color-enlace-hover);
+  color: #fff; /* Cambiar el color del texto al pasar el ratón */
+}
+
+/* Contenido Principal */
+main {
+  padding: var(--padding-general);
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.8); /* Fondo semitransparente */
+  border-radius: 10px; /* Bordes redondeados para estética */
+}
+
+/* Pie de Página */
+footer {
+  background-color: var(--color-footer); /* Fondo semitransparente */
+  color: #fff; /* Asegúrate de que el texto sea legible sobre el fondo semitransparente */
+  text-align: center;
+  padding: 10px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  border-top: 1px solid rgba(0, 0, 0, 0.1); /* Añadir un borde superior sutil para separación */
+}
