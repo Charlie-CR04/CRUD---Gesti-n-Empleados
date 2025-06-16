@@ -1,53 +1,42 @@
 <?php
 include "../includes/conexion.php";
 
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    header("Location: index.php?error=notfound");
-    exit;
-}
+$error_message = "";
 
-$id = $_GET['id'];
+// Verificar si se recibió el ID del horario
+if (isset($_GET['id']) && !empty($_GET['id'])) {
+    $id_horario = $_GET['id'];
 
-// Verificar si el empleado tiene registros relacionados (por ejemplo en nomina, horarios o asistencias)
-$checkRelations = [
-    "nomina" => "id_empleado",
-    "horarios" => "id_empleado",
-    "asistencias" => "id_empleado"
-];
+    // Verificar si el horario existe
+    $sql_verificar = "SELECT * FROM horarios WHERE id_horario = ?";
+    $stmt_verificar = $conn->prepare($sql_verificar);
+    $stmt_verificar->bind_param("i", $id_horario);
+    $stmt_verificar->execute();
+    $resultado = $stmt_verificar->get_result();
+    $horario = $resultado->fetch_assoc();
+    $stmt_verificar->close();
 
-$hasRelations = false;
+    if ($horario) {
+        // Eliminar el horario
+        $sql = "DELETE FROM horarios WHERE id_horario = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $id_horario);
 
-foreach ($checkRelations as $table => $column) {
-    $sql_check = "SELECT COUNT(*) as total FROM $table WHERE $column = ?";
-    $stmt_check = $conn->prepare($sql_check);
-    $stmt_check->bind_param("i", $id);
-    $stmt_check->execute();
-    $result = $stmt_check->get_result()->fetch_assoc();
-    $stmt_check->close();
+        if ($stmt->execute()) {
+            $stmt->close();
+            header("Location: index.php?success=3"); // Redirigir con mensaje de éxito
+            exit;
+        } else {
+            $error_message = "Error al eliminar el horario.";
+        }
 
-    if ($result['total'] > 0) {
-        $hasRelations = true;
-        break;
+        $stmt->close();
+    } else {
+        header("Location: index.php?error=notfound");
+        exit;
     }
-}
-
-if ($hasRelations) {
-    header("Location: index.php?error=relation");
-    exit;
-}
-
-// Si no hay relaciones, eliminar al empleado
-$sql_delete = "DELETE FROM empleados WHERE id_empleado = ?";
-$stmt = $conn->prepare($sql_delete);
-$stmt->bind_param("i", $id);
-
-if ($stmt->execute()) {
-    $stmt->close();
-    header("Location: index.php?success=3");
-    exit;
 } else {
-    $stmt->close();
-    header("Location: index.php?error=deletefail");
+    header("Location: index.php?error=notfound");
     exit;
 }
 ?>
